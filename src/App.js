@@ -12,6 +12,8 @@ const DEFAULT_QUERY = 'redux',
       PARAM_HPP = 'hitsPerPage=';
 
 class App extends Component {
+  _isModified = false;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -55,7 +57,6 @@ class App extends Component {
     //const oldHits = this.state.result.hits || [];
     const oldHits = results && results[searchKey] ? results[searchKey].hits : [];
     const updatedHits = [...oldHits, ...hits];
-    console.log(updatedHits)
     this.setState({
       results: {
         ...results, 
@@ -67,8 +68,8 @@ class App extends Component {
 
   fetchSearchTopStories(searchTerm, page = 0) {
     axios(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
-      .then(result => this.setSearchTopStories(result.data))
-      .catch(error => this.setState({error}));
+      .then(result => this._isModified && this.setSearchTopStories(result.data))
+      .catch(error => this._isModified && this.setState({error}));
   }
 
   needsToSearchTopStories(searchTerm) {
@@ -76,11 +77,15 @@ class App extends Component {
   }
 
   componentDidMount() {
+    this._isModified = true;
     const {searchTerm} = this.state;
     this.setState({searchKey: searchTerm});
     this.fetchSearchTopStories(searchTerm);
   }
 
+  componentWillUnmount() {
+    this._isModified = false;
+  }
   render() {
     const {searchTerm, results, searchKey, error} = this.state;
     const page = (results && results[searchKey] && results[searchKey].page) || 0;
